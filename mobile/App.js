@@ -128,47 +128,90 @@ export default function App() {
 
   const initializeApp = async () => {
     try {
+      console.log('=== APP INITIALIZATION START ===');
+      console.log('Timestamp:', new Date().toISOString());
+      
       setLocationStatus('Authenticating...');
       
       // Check if user is authenticated
+      console.log('Step 1: Checking authentication status...');
       const isAuthenticated = await AuthService.isAuthenticated();
+      console.log('Authentication status:', isAuthenticated);
       
       if (!isAuthenticated) {
+        console.log('Not authenticated, performing auto-login...');
         // For demo purposes, auto-login with device ID
         // In production, you'd show a login screen
         await performAutoLogin();
+      } else {
+        console.log('Already authenticated');
       }
 
       // Verify we have a token after login
+      console.log('Step 2: Verifying access token...');
       const token = await AuthService.getAccessToken();
       if (!token) {
         throw new Error('Authentication failed - no access token');
       }
+      console.log('✓ Access token verified');
 
       setLocationStatus('Registering device...');
       
       // Register device with server
+      console.log('Step 3: Registering device...');
       try {
         await DeviceService.registerDevice();
-        console.log('Device registered with server');
+        console.log('✓ Device registered with server');
         
         // Start device heartbeat
+        console.log('Step 4: Starting heartbeat...');
         DeviceService.startHeartbeat(300000); // 5 minutes
+        console.log('✓ Heartbeat started');
       } catch (deviceError) {
         console.warn('Device registration failed:', deviceError);
+        console.warn('Continuing without device registration...');
         // Continue anyway - not critical for basic functionality
       }
 
       setLocationStatus('Initializing location tracking...');
       
       // Initialize location tracking
+      console.log('Step 5: Initializing location tracking...');
       await initializeLocationTracking();
+      console.log('✓ Location tracking initialized');
       
       // Start background location updates
+      console.log('Step 6: Starting background location updates...');
       await startBackgroundLocationTracking();
+      console.log('✓ Background location updates started');
       
       // Monitor battery level
+      console.log('Step 7: Starting battery monitoring...');
       monitorBattery();
+      console.log('✓ Battery monitoring started');
+      
+      setLocationStatus('Active');
+      setIsInitializing(false);
+      console.log('=== APP INITIALIZATION SUCCESS ===');
+    } catch (error) {
+      console.error('=== APP INITIALIZATION FAILED ===');
+      console.error('Error details:', {
+        type: error.constructor.name,
+        message: error.message,
+        stack: error.stack,
+      });
+      Alert.alert(
+        'Initialization Error',
+        error.message || 'Failed to initialize app. Check logs for details.',
+        [
+          { text: 'Retry', onPress: () => initializeApp() },
+          { text: 'Cancel', style: 'cancel' }
+        ]
+      );
+      setLocationStatus('Error: ' + error.message);
+      setIsInitializing(false);
+    }
+  };
       
       setLocationStatus('Active');
       setIsInitializing(false);
@@ -189,41 +232,55 @@ export default function App() {
 
   const performAutoLogin = async () => {
     try {
+      console.log('=== AUTO LOGIN START ===');
+      console.log('Step 1: Getting device ID...');
       const deviceId = await StorageService.getDeviceId();
-      console.log('Generated device ID:', deviceId);
-      console.log('Device ID length:', deviceId.length);
+      console.log('✓ Device ID generated:', deviceId);
+      console.log('✓ Device ID length:', deviceId.length);
       
+      console.log('Step 2: Getting device info...');
       // Get device name for employee registration
       const deviceInfo = await DeviceService.getDeviceInfo();
       const deviceName = deviceInfo.deviceName || `Device ${Device.modelName || 'Unknown'}`;
-      
-      console.log('Device info:', {
+      console.log('✓ Device info retrieved:', {
         deviceId,
         deviceName,
         model: deviceInfo.modelName,
         os: deviceInfo.osName,
       });
       
+      console.log('Step 3: Preparing login credentials...');
       // Using device ID as both email and password for auto-registration
       // The server will automatically create an employee with device name
       // Use .com instead of .local for better email validation
       const email = `${deviceId}@device.com`;
       const password = deviceId;
       
-      console.log('Attempting auto-login...');
-      console.log('Email:', email);
-      console.log('Password length:', password.length);
-      console.log('Device name:', deviceName);
-      console.log('Full login request:', { email, password: '***', device_name: deviceName });
+      console.log('✓ Credentials prepared');
+      console.log('  - Email:', email);
+      console.log('  - Password length:', password.length);
+      console.log('  - Device name:', deviceName);
       
-      await AuthService.login(email, password, deviceName);
-      console.log('Auto-login successful');
+      console.log('Step 4: Sending login request to server...');
+      console.log('  - API URL:', 'https://employee.shahek.org/api/auth/login');
+      console.log('  - Request data:', { email, password: '[HIDDEN]', device_name: deviceName });
+      
+      const loginResult = await AuthService.login(email, password, deviceName);
+      console.log('✓ Login successful!');
+      console.log('  - Employee ID:', loginResult?.employee?.id);
+      console.log('  - Employee name:', loginResult?.employee?.name);
+      console.log('=== AUTO LOGIN SUCCESS ===');
     } catch (error) {
-      console.error('Auto-login failed:', error);
+      console.error('✗ AUTO LOGIN FAILED!');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
       console.error('Error details:', {
         message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
         stack: error.stack,
       });
+      console.error('=== AUTO LOGIN ERROR ===');
       throw new Error('Authentication failed: ' + error.message);
     }
   };
