@@ -225,7 +225,37 @@ export default function App() {
         stack: error.stack,
       });
       throw new Error('Authentication failed: ' + error.message);
+    }initializeLocationTracking = async () => {
+    try {
+      console.log('Initializing location tracking...');
+      
+      // Get current location to verify permissions are working
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      
+      console.log('Current location:', {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        accuracy: location.coords.accuracy,
+      });
+      
+      // Send initial location to server
+      try {
+        await LocationService.sendLocation(location);
+        console.log('Initial location sent to server');
+      } catch (locationError) {
+        console.warn('Failed to send initial location:', locationError);
+      }
+      
+      setLocationStatus('Location initialized');
+    } catch (error) {
+      console.error('Location initialization error:', error);
+      throw new Error('Failed to get initial location: ' + error.message);
     }
+  };
+
+  const 
   };
 
   const startBackgroundLocationTracking = async () => {
