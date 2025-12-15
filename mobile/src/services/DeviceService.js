@@ -120,7 +120,8 @@ class DeviceServiceClass {
   /**
    * Get detailed device information
    */
-  asif (this.deviceInfo) {
+  async getDeviceInfo() {
+    if (this.deviceInfo) {
       return this.deviceInfo;
     }
     
@@ -137,8 +138,7 @@ class DeviceServiceClass {
       isDevice: Device.isDevice,
     };
     
-    return this.deviceInfo isDevice: Device.isDevice,
-    };
+    return this.deviceInfo;
   }
 
   /**
