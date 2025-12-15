@@ -76,8 +76,8 @@ class AuthController extends Controller
 
     private function autoRegisterEmployee(Request $request)
     {
-        // Extract device ID from email (format: deviceid@device.local)
-        $deviceId = str_replace('@device.local', '', $request->email);
+        // Extract device ID from email (format: deviceid@device.com)
+        $deviceId = str_replace('@device.com', '', $request->email);
         
         // Use device name if provided, otherwise generate from device ID
         $deviceName = $request->input('device_name');

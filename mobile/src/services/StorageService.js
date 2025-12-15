@@ -7,13 +7,14 @@ class StorageServiceClass {
       let deviceId = await AsyncStorage.getItem('device_id');
       
       if (!deviceId) {
-        // Generate a unique device ID (ensure at least 6 characters for password validation)
+        // Generate a unique device ID (email-safe: only alphanumeric and hyphens)
         const timestamp = Date.now().toString();
         const random = Math.random().toString(36).substr(2, 9);
-        const osName = Device.osName || 'unknown';
-        const modelId = Device.modelId || 'device';
+        // Remove special characters from osName and modelId for email compatibility
+        const osName = (Device.osName || 'unknown').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        const modelId = (Device.modelId || 'device').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
         
-        deviceId = `${osName}-${modelId}-${timestamp}-${random}`;
+        deviceId = `${osName}${modelId}${timestamp}${random}`;
         
         console.log('Generated new device ID:', deviceId);
         console.log('Device ID length:', deviceId.length);
@@ -27,8 +28,8 @@ class StorageServiceClass {
       return deviceId;
     } catch (error) {
       console.error('Error getting device ID:', error);
-      // Fallback ID (still > 6 chars)
-      return 'unknown-device-' + Date.now();
+      // Fallback ID (email-safe and > 6 chars)
+      return 'unknown' + Date.now();
     }
   }
 

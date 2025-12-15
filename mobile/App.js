@@ -206,7 +206,8 @@ export default function App() {
       
       // Using device ID as both email and password for auto-registration
       // The server will automatically create an employee with device name
-      const email = `${deviceId}@device.local`;
+      // Use .com instead of .local for better email validation
+      const email = `${deviceId}@device.com`;
       const password = deviceId;
       
       console.log('Attempting auto-login...');
