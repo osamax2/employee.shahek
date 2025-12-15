@@ -255,9 +255,6 @@ export default function App() {
     }
   };
 
-  const 
-  };
-
   const startBackgroundLocationTracking = async () => {
     try {
       const isRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME);
