@@ -1,0 +1,21 @@
+# macOS / system
+.Trash
+**/.Trash
+.DS_Store
+**/.DS_Store
+
+# VCS / caches
+.git
+.expo
+**/.expo
+
+# deps & build outputs
+node_modules
+**/node_modules
+dist
+build
+android
+ios
+
+# logs
+*.log
