@@ -44,9 +44,6 @@
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "WAKE_LOCK"
-      ],
-      "blockedPermissions": [
-        "DETECT_SCREEN_CAPTURE"
       ]
     },
     "plugins": [

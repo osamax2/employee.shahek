@@ -13,15 +13,27 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
+        // Log incoming request for debugging
+        \Log::info('Login attempt', [
+            'email' => $request->email,
+            'password_length' => strlen($request->password ?? ''),
+            'device_name' => $request->device_name,
+        ]);
+
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string|min:6',
         ]);
 
         if ($validator->fails()) {
+            \Log::error('Login validation failed', [
+                'errors' => $validator->errors()->toArray(),
+                'request' => $request->all(),
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Validation error',
+                'message' => 'Validation error: ' . $validator->errors()->first(),
                 'errors' => $validator->errors(),
             ], 422);
         }

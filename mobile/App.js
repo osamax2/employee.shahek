@@ -191,6 +191,7 @@ export default function App() {
     try {
       const deviceId = await StorageService.getDeviceId();
       console.log('Generated device ID:', deviceId);
+      console.log('Device ID length:', deviceId.length);
       
       // Get device name for employee registration
       const deviceInfo = await DeviceService.getDeviceInfo();
@@ -210,7 +211,9 @@ export default function App() {
       
       console.log('Attempting auto-login...');
       console.log('Email:', email);
+      console.log('Password length:', password.length);
       console.log('Device name:', deviceName);
+      console.log('Full login request:', { email, password: '***', device_name: deviceName });
       
       await AuthService.login(email, password, deviceName);
       console.log('Auto-login successful');
