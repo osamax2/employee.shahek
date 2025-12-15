@@ -212,23 +212,6 @@ export default function App() {
       setIsInitializing(false);
     }
   };
-      
-      setLocationStatus('Active');
-      setIsInitializing(false);
-    } catch (error) {
-      console.error('App initialization error:', error);
-      Alert.alert(
-        'Initialization Error',
-        error.message || 'Failed to initialize app. Please try again.',
-        [
-          { text: 'Retry', onPress: () => initializeApp() },
-          { text: 'Cancel', style: 'cancel' }
-        ]
-      );
-      setLocationStatus('Error: ' + error.message);
-      setIsInitializing(false);
-    }
-  };
 
   const performAutoLogin = async () => {
     try {
