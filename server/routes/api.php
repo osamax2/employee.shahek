@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Admin\DashboardController;
 
 /*
@@ -28,6 +29,12 @@ Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
     Route::prefix('location')->group(function () {
         Route::post('/', [LocationController::class, 'store']);
         Route::get('/', [LocationController::class, 'index']);
+    });
+
+    Route::prefix('device')->group(function () {
+        Route::post('/register', [DeviceController::class, 'register']);
+        Route::get('/me', [DeviceController::class, 'show']);
+        Route::post('/heartbeat', [DeviceController::class, 'heartbeat']);
     });
 
     Route::get('/employees/me', [AuthController::class, 'me']);

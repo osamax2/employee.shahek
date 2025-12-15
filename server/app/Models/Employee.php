@@ -37,6 +37,11 @@ class Employee extends Authenticatable implements JWTSubject
         return $this->hasMany(EmployeeLocation::class);
     }
 
+    public function devices()
+    {
+        return $this->hasMany(Device::class);
+    }
+
     public function trackingSessions()
     {
         return $this->hasMany(TrackingSession::class);

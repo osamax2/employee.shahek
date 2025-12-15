@@ -8,6 +8,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
@@ -18,6 +19,7 @@ import * as Battery from 'expo-battery';
 import { LocationService } from './src/services/LocationService';
 import { AuthService } from './src/services/AuthService';
 import { StorageService } from './src/services/StorageService';
+import { DeviceService } from './src/services/DeviceService';
 
 const LOCATION_TASK_NAME = 'background-location-task';
 
@@ -37,13 +39,97 @@ export default function App() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [locationStatus, setLocationStatus] = useState('Initializing...');
   const [batteryLevel, setBatteryLevel] = useState(null);
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
 
   useEffect(() => {
-    initializeApp();
+    checkInitialPermissions();
   }, []);
+
+  const checkInitialPermissions = async () => {
+    try {
+      // Check current permission status
+      const { status: foregroundStatus } = await Location.getForegroundPermissionsAsync();
+      const { status: backgroundStatus } = await Location.getBackgroundPermissionsAsync();
+
+      if (foregroundStatus === 'granted' && backgroundStatus === 'granted') {
+        // All permissions granted, proceed with initialization
+        setPermissionGranted(true);
+        initializeApp();
+      } else {
+        // Show permission prompt
+        setShowPermissionPrompt(true);
+        setIsInitializing(false);
+      }
+    } catch (error) {
+      console.error('Permission check error:', error);
+      setShowPermissionPrompt(true);
+      setIsInitializing(false);
+    }
+  };
+
+  const requestPermissionsAndStart = async () => {
+    setIsInitializing(true);
+    setShowPermissionPrompt(false);
+    
+    try {
+      // Request permissions with clear explanation
+      const result = await requestLocationPermissions();
+      
+      if (result) {
+        setPermissionGranted(true);
+        await initializeApp();
+      } else {
+        setIsInitializing(false);
+        setShowPermissionPrompt(true);
+      }
+    } catch (error) {
+      console.error('Permission request error:', error);
+      Alert.alert('Error', 'Failed to request permissions. Please try again.');
+      setIsInitializing(false);
+      setShowPermissionPrompt(true);
+    }
+  };
+
+  const requestLocationPermissions = async () => {
+    try {
+      // Request foreground permissions
+      const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
+      
+      if (foregroundStatus !== 'granted') {
+        Alert.alert(
+          'Location Permission Required',
+          'This app requires location access to function properly. Location tracking is necessary for work monitoring as per your employment agreement.',
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+
+      // Request background permissions
+      const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+      
+      if (backgroundStatus !== 'granted') {
+        Alert.alert(
+          'Background Location Required',
+          Platform.OS === 'ios'
+            ? 'Please go to Settings and select "Always" for location access to enable continuous tracking.'
+            : 'Please enable "Allow all the time" for location access in your device settings to enable continuous tracking.',
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Location permission request error:', error);
+      return false;
+    }
+  };
 
   const initializeApp = async () => {
     try {
+      setLocationStatus('Authenticating...');
+      
       // Check if user is authenticated
       const isAuthenticated = await AuthService.isAuthenticated();
       
@@ -53,6 +139,17 @@ export default function App() {
         await performAutoLogin();
       }
 
+      setLocationStatus('Registering device...');
+      
+      // Register device with server
+      await DeviceService.registerDevice();
+      console.log('Device registered with server');
+
+      // Start device heartbeat
+      DeviceService.startHeartbeat(300000); // 5 minutes
+
+      setLocationStatus('Initializing location tracking...');
+      
       // Initialize location tracking
       await initializeLocationTracking();
       
@@ -62,10 +159,12 @@ export default function App() {
       // Monitor battery level
       monitorBattery();
       
+      setLocationStatus('Active');
       setIsInitializing(false);
     } catch (error) {
       console.error('App initialization error:', error);
       Alert.alert('Initialization Error', error.message);
+      setLocationStatus('Error: ' + error.message);
       setIsInitializing(false);
     }
   };
@@ -73,36 +172,7 @@ export default function App() {
   const performAutoLogin = async () => {
     try {
       const deviceId = await StorageService.getDeviceId();
-      // Using device ID as both email and password for demo
-      // In production, implement proper authentication
-      const email = `${deviceId}@device.local`;
-      const password = deviceId;
-      
-      await AuthService.login(email, password);
-      console.log('Auto-login successful with device ID:', deviceId);
-    } catch (error) {
-      console.error('Auto-login failed:', error);
-      throw new Error('Authentication failed. Please contact your administrator.');
-    }
-  };
-
-  const initializeLocationTracking = async () => {
-    try {
-      // Request foreground permissions first
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      
-      if (status !== 'granted') {
-        setLocationStatus('Location permission denied');
-        Alert.alert(
-          'Location Permission Required',
-          'This app requires location access to function. Please enable location permissions in your device settings.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-
-      setLocationStatus('Foreground permission granted');
-
+      setLocationStatus('All permissions granted - Starting tracking');
       // Request background permissions
       const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
       
@@ -181,7 +251,59 @@ export default function App() {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#4287f5" />
-        <Text style={styles.loadingText}>Initializing...</Text>
+        <Text style={styles.loadingText}>{locationStatus || 'Initializing...'}</Text>
+      </View>
+    );
+  }
+
+  if (showPermissionPrompt) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.logoContainer}>
+          <View style={styles.logoPlaceholder}>
+            <Text style={styles.logoText}>COMPANY LOGO</Text>
+          </View>
+        </View>
+
+        <Text style={styles.title}>Location Permission Required</Text>
+        
+        <View style={styles.permissionNotice}>
+          <Text style={styles.permissionTitle}>⚠️ GPS Tracking Notice</Text>
+          <Text style={styles.permissionText}>
+            This app requires GPS location access to function properly.
+          </Text>
+          <Text style={styles.permissionText}>
+            {'\n'}The app will request permission to:
+          </Text>
+          <Text style={styles.privacyBullet}>
+            ✓ Access your location when the app is in use
+          </Text>
+          <Text style={styles.privacyBullet}>
+            ✓ Access your location in the background
+          </Text>
+          <Text style={styles.permissionText}>
+            {'\n'}This is required for:
+          </Text>
+          <Text style={styles.privacyBullet}>
+            • Employee work tracking
+          </Text>
+          <Text style={styles.privacyBullet}>
+            • Compliance monitoring
+          </Text>
+          <Text style={styles.privacyBullet}>
+            • Operational requirements
+          </Text>
+          <Text style={styles.permissionText}>
+            {'\n'}By continuing, you agree to location tracking as per your employment agreement.
+          </Text>
+        </View>
+
+        <TouchableOpacity 
+          style={styles.continueButton}
+          onPress={requestPermissionsAndStart}
+        >
+          <Text style={styles.continueButtonText}>Continue & Grant Permissions</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -284,6 +406,50 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,
+  permissionNotice: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    marginBottom: 20,
+    marginHorizontal: 20,
+    width: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  permissionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ff6b6b',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  permissionText: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
+    marginBottom: 5,
+  },
+  continueButton: {
+    backgroundColor: '#4287f5',
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  continueButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
