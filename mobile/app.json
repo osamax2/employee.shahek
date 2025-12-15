@@ -11,6 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.shahek.employeetracking",
@@ -20,9 +23,9 @@
           "location",
           "fetch"
         ],
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to track your work activities as per your employment agreement. This data is used for compliance and operational purposes only.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to track your work activities as per your employment agreement.",
         "NSLocationWhenInUseUsageDescription": "We need your location to track your work activities while you use the app.",
-        "NSLocationAlwaysUsageDescription": "We need your location to track your work activities even when the app is in the background, as per your employment agreement."
+        "NSLocationAlwaysUsageDescription": "We need your location to track your work activities even when the app is in the background."
       }
     },
     "android": {
@@ -38,23 +41,14 @@
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION",
-        "RECEIVE_BOOT_COMPLETED",
-        "INTERNET",
-        "ACCESS_NETWORK_STATE"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": ""
-        }
-      }
+        "INTERNET"
+      ]
     },
     "plugins": [
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "We need your location to track your work activities as per your employment agreement.",
-          "locationAlwaysPermission": "We need your location to track your work activities even when the app is in the background.",
-          "locationWhenInUsePermission": "We need your location to track your work activities while you use the app.",
+          "locationAlwaysAndWhenInUsePermission": "Allow Employee Tracking to use your location.",
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
