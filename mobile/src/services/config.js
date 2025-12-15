@@ -1,5 +1,5 @@
 // Configuration constants
-export const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000/api';
+export const API_BASE_URL = 'https://employee.shahek.org/api';
 
 export const LOCATION_CONFIG = {
   UPDATE_INTERVAL: parseInt(process.env.LOCATION_UPDATE_INTERVAL || '300000', 10), // 5 minutes

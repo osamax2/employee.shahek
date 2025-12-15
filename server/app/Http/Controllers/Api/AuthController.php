@@ -66,9 +66,13 @@ class AuthController extends Controller
     {
         // Extract device ID from email (format: deviceid@device.local)
         $deviceId = str_replace('@device.local', '', $request->email);
+        
+        // Use device name if provided, otherwise generate from device ID
+        $deviceName = $request->input('device_name');
+        $employeeName = $deviceName ?: 'Device ' . substr($deviceId, 0, 8);
 
         return Employee::create([
-            'name' => 'Device ' . substr($deviceId, 0, 8),
+            'name' => $employeeName,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'device_id' => $deviceId,

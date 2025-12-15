@@ -8,12 +8,19 @@ class AuthServiceClass {
     this.refreshToken = null;
   }
 
-  async login(email, password) {
+  async login(email, password, deviceName = null) {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+      const loginData = {
         email,
         password,
-      });
+      };
+      
+      // Include device name if provided for auto-registration
+      if (deviceName) {
+        loginData.device_name = deviceName;
+      }
+      
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, loginData);
 
       const { access_token, refresh_token, employee } = response.data;
 

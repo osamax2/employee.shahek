@@ -9,6 +9,7 @@ import { API_BASE_URL } from './config';
 class DeviceServiceClass {
   constructor() {
     this.isRegistered = false;
+    this.deviceInfo = null;
   }
 
   /**
@@ -34,7 +35,9 @@ class DeviceServiceClass {
         app_version: deviceInfo.appVersion,
       };
 
-      console.log('Registering device:', deviceData);
+      console.log('Registering device with server...');
+      console.log('API URL:', `${API_BASE_URL}/device/register`);
+      console.log('Device data:', deviceData);
 
       const response = await axios.post(
         `${API_BASE_URL}/device/register`,
@@ -53,6 +56,11 @@ class DeviceServiceClass {
       return response.data;
 
     } catch (error) {
+      console.error('Device registration error details:');
+      console.error('Status:', error.response?.status);
+      console.error('Data:', error.response?.data);
+      console.error('Message:', error.message);
+      
       if (error.response?.status === 401) {
         // Token expired, try to refresh
         try {
@@ -61,11 +69,19 @@ class DeviceServiceClass {
           return await this.registerDevice();
         } catch (refreshError) {
           console.error('Token refresh failed during device registration:', refreshError);
-          throw refreshError;
+          throw new Error('Authentication failed - please restart the app');
         }
       }
-      console.error('Device registration error:', error.response?.data || error.message);
-      throw new Error('Failed to register device with server');
+      
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Connection timeout - please check your internet connection');
+      }
+      
+      if (error.message.includes('Network Error')) {
+        throw new Error('Network error - please check API_BASE_URL in config');
+      }
+      
+      throw new Error(error.response?.data?.message || 'Failed to register device with server');
     }
   }
 
@@ -104,8 +120,11 @@ class DeviceServiceClass {
   /**
    * Get detailed device information
    */
-  async getDeviceInfo() {
-    return {
+  asif (this.deviceInfo) {
+      return this.deviceInfo;
+    }
+    
+    this.deviceInfo = {
       deviceName: Device.deviceName || 'Unknown Device',
       modelName: Device.modelName || 'Unknown Model',
       manufacturer: Device.manufacturer || 'Unknown',
@@ -116,6 +135,9 @@ class DeviceServiceClass {
       designName: Device.designName || 'Unknown',
       productName: Device.productName || 'Unknown',
       isDevice: Device.isDevice,
+    };
+    
+    return this.deviceInfo isDevice: Device.isDevice,
     };
   }
 

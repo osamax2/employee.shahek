@@ -139,14 +139,25 @@ export default function App() {
         await performAutoLogin();
       }
 
+      // Verify we have a token after login
+      const token = await AuthService.getAccessToken();
+      if (!token) {
+        throw new Error('Authentication failed - no access token');
+      }
+
       setLocationStatus('Registering device...');
       
       // Register device with server
-      await DeviceService.registerDevice();
-      console.log('Device registered with server');
-
-      // Start device heartbeat
-      DeviceService.startHeartbeat(300000); // 5 minutes
+      try {
+        await DeviceService.registerDevice();
+        console.log('Device registered with server');
+        
+        // Start device heartbeat
+        DeviceService.startHeartbeat(300000); // 5 minutes
+      } catch (deviceError) {
+        console.warn('Device registration failed:', deviceError);
+        // Continue anyway - not critical for basic functionality
+      }
 
       setLocationStatus('Initializing location tracking...');
       
@@ -163,7 +174,14 @@ export default function App() {
       setIsInitializing(false);
     } catch (error) {
       console.error('App initialization error:', error);
-      Alert.alert('Initialization Error', error.message);
+      Alert.alert(
+        'Initialization Error',
+        error.message || 'Failed to initialize app. Please try again.',
+        [
+          { text: 'Retry', onPress: () => initializeApp() },
+          { text: 'Cancel', style: 'cancel' }
+        ]
+      );
       setLocationStatus('Error: ' + error.message);
       setIsInitializing(false);
     }
@@ -172,29 +190,22 @@ export default function App() {
   const performAutoLogin = async () => {
     try {
       const deviceId = await StorageService.getDeviceId();
-      setLocationStatus('All permissions granted - Starting tracking');
-      // Request background permissions
-      const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+      // Get device name for employee registration
+      const deviceInfo = await DeviceService.getDeviceInfo();
+      const deviceName = deviceInfo.deviceName || `Device ${Device.modelName || 'Unknown'}`;
       
-      if (backgroundStatus !== 'granted') {
-        setLocationStatus('Background permission needed');
-        Alert.alert(
-          'Background Location Required',
-          Platform.OS === 'ios'
-            ? 'Please go to Settings and select "Always" for location access to enable continuous tracking.'
-            : 'Please enable "Allow all the time" for location access in your device settings.',
-          [{ text: 'OK' }]
-        );
-      } else {
-        setLocationStatus('All permissions granted');
-      }
-
-      // Send initial location
-      await LocationService.sendCurrentLocation();
+      // Using device ID as both email and password for auto-registration
+      // The server will automatically create an employee with device name
+      const email = `${deviceId}@device.local`;
+      const password = deviceId;
       
+      console.log('Auto-login with device ID:', deviceId);
+      console.log('Device name:', deviceName);
+      await AuthService.login(email, password, deviceName);
+      console.log('Auto-login successful');
     } catch (error) {
-      console.error('Location initialization error:', error);
-      setLocationStatus('Error: ' + error.message);
+      console.error('Auto-login failed:', error);
+      throw new Error('Authentication failed. Please contact your administrator.');
     }
   };
 
