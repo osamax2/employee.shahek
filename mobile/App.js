@@ -225,7 +225,10 @@ export default function App() {
         stack: error.stack,
       });
       throw new Error('Authentication failed: ' + error.message);
-    }initializeLocationTracking = async () => {
+    }
+  };
+
+  const initializeLocationTracking = async () => {
     try {
       console.log('Initializing location tracking...');
       
