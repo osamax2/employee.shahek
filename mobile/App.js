@@ -190,22 +190,37 @@ export default function App() {
   const performAutoLogin = async () => {
     try {
       const deviceId = await StorageService.getDeviceId();
+      console.log('Generated device ID:', deviceId);
+      
       // Get device name for employee registration
       const deviceInfo = await DeviceService.getDeviceInfo();
       const deviceName = deviceInfo.deviceName || `Device ${Device.modelName || 'Unknown'}`;
+      
+      console.log('Device info:', {
+        deviceId,
+        deviceName,
+        model: deviceInfo.modelName,
+        os: deviceInfo.osName,
+      });
       
       // Using device ID as both email and password for auto-registration
       // The server will automatically create an employee with device name
       const email = `${deviceId}@device.local`;
       const password = deviceId;
       
-      console.log('Auto-login with device ID:', deviceId);
+      console.log('Attempting auto-login...');
+      console.log('Email:', email);
       console.log('Device name:', deviceName);
+      
       await AuthService.login(email, password, deviceName);
       console.log('Auto-login successful');
     } catch (error) {
       console.error('Auto-login failed:', error);
-      throw new Error('Authentication failed. Please contact your administrator.');
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+      });
+      throw new Error('Authentication failed: ' + error.message);
     }
   };
 

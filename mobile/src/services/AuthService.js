@@ -20,9 +20,25 @@ class AuthServiceClass {
         loginData.device_name = deviceName;
       }
       
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, loginData);
+      console.log('Attempting login to:', API_BASE_URL + '/auth/login');
+      console.log('Login data:', { email, device_name: deviceName });
+      
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, loginData, {
+        timeout: 15000, // 15 seconds
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+
+      console.log('Login response status:', response.status);
+      console.log('Login response data:', response.data);
 
       const { access_token, refresh_token, employee } = response.data;
+
+      if (!access_token) {
+        throw new Error('No access token received from server');
+      }
 
       // Store tokens securely
       await SecureStore.setItemAsync('access_token', access_token);
@@ -32,10 +48,40 @@ class AuthServiceClass {
       this.accessToken = access_token;
       this.refreshToken = refresh_token;
 
+      console.log('Login successful for employee:', employee.name);
       return employee;
     } catch (error) {
-      console.error('Login error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || 'Login failed');
+      console.error('Login error details:');
+      console.error('Error message:', error.message);
+      console.error('Response status:', error.response?.status);
+      console.error('Response data:', error.response?.data);
+      console.error('Request config:', error.config?.url);
+      
+      // Specific error messages
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Connection timeout. Please check your internet connection.');
+      }
+      
+      if (error.message.includes('Network Error')) {
+        throw new Error('Network error. Please check your internet connection and API URL.');
+      }
+      
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.message || error.message;
+        
+        if (status === 401) {
+          throw new Error('Invalid credentials: ' + message);
+        } else if (status === 422) {
+          throw new Error('Validation error: ' + message);
+        } else if (status >= 500) {
+          throw new Error('Server error. Please try again later.');
+        }
+        
+        throw new Error(message);
+      }
+      
+      throw new Error('Login failed: ' + error.message);
     }
   }
 
