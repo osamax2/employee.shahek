@@ -204,9 +204,13 @@ class LocationServiceClass {
   }
 
   async getDeviceInfo() {
+    // Truncate to match Laravel validation max:50 for device_os
+    const osName = (Device.osName || 'unknown').substring(0, 50);
+    const osVersion = (Device.osVersion || 'unknown').substring(0, 50);
+    
     return {
-      os: Device.osName || 'unknown',
-      version: Device.osVersion || 'unknown',
+      os: osName,
+      version: osVersion,
       model: Device.modelName || 'unknown',
     };
   }
