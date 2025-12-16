@@ -87,7 +87,14 @@ class AuthServiceClass {
 
   async refreshAccessToken() {
     try {
-      const refreshToken = await SecureStore.getItemAsync('refresh_token');
+      let refreshToken;
+      try {
+        refreshToken = await SecureStore.getItemAsync('refresh_token');
+      } catch (decryptError) {
+        console.error('Failed to decrypt refresh token, clearing:', decryptError.message);
+        await SecureStore.deleteItemAsync('refresh_token');
+        throw new Error('Token decryption failed, please login again');
+      }
       
       if (!refreshToken) {
         throw new Error('No refresh token available');
@@ -116,7 +123,13 @@ class AuthServiceClass {
       return this.accessToken;
     }
 
-    this.accessToken = await SecureStore.getItemAsync('access_token');
+    try {
+      this.accessToken = await SecureStore.getItemAsync('access_token');
+    } catch (decryptError) {
+      console.error('Failed to decrypt access token, clearing:', decryptError.message);
+      await SecureStore.deleteItemAsync('access_token');
+      this.accessToken = null;
+    }
     return this.accessToken;
   }
 
@@ -134,8 +147,14 @@ class AuthServiceClass {
   }
 
   async getEmployee() {
-    const employeeJson = await SecureStore.getItemAsync('employee');
-    return employeeJson ? JSON.parse(employeeJson) : null;
+    try {
+      const employeeJson = await SecureStore.getItemAsync('employee');
+      return employeeJson ? JSON.parse(employeeJson) : null;
+    } catch (decryptError) {
+      console.error('Failed to decrypt employee data, clearing:', decryptError.message);
+      await SecureStore.deleteItemAsync('employee');
+      return null;
+    }
   }
 }
 
