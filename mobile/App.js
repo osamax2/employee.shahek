@@ -29,9 +29,12 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
     console.error('Background location task error:', error);
     return;
   }
-  if (data) {
+  if (data && data.locations) {
     const { locations } = data;
+    console.log(`Processing ${locations.length} background locations`);
     await LocationService.processBackgroundLocations(locations);
+  } else {
+    console.warn('Background location task: no locations data');
   }
 });
 

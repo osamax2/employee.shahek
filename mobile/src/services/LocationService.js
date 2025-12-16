@@ -87,6 +87,9 @@ class LocationServiceClass {
         throw new Error('No access token available');
       }
 
+      // Log the data we're sending for debugging
+      console.log('Sending location data:', JSON.stringify(locationData, null, 2));
+
       const response = await axios.post(
         `${API_BASE_URL}/location`,
         locationData,
@@ -103,6 +106,15 @@ class LocationServiceClass {
       return response.data;
 
     } catch (error) {
+      // Log detailed error information
+      if (error.response) {
+        console.error('Location POST failed:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      }
+      
       if (error.response?.status === 401) {
         // Token expired, try to refresh
         try {
