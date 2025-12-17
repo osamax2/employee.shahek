@@ -125,6 +125,8 @@ class DeviceController extends Controller
 
     /**
      * Heartbeat to update device status
+     * This endpoint is called periodically by the mobile app to indicate it's still active
+     * When the app is uninstalled/closed, heartbeats stop and the device will be marked offline
      */
     public function heartbeat(Request $request)
     {
@@ -150,14 +152,26 @@ class DeviceController extends Controller
                 ], 404);
             }
 
+            // Update device last_seen_at
             $device->update([
                 'last_seen_at' => now(),
                 'is_active' => true,
             ]);
 
+            // Also update employee's last_seen_at if device is linked to an employee
+            if ($device->employee_id) {
+                $employee = Employee::find($device->employee_id);
+                if ($employee) {
+                    $employee->update([
+                        'last_seen_at' => now(),
+                    ]);
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Device heartbeat recorded',
+                'timestamp' => now()->toISOString(),
             ]);
 
         } catch (\Exception $e) {

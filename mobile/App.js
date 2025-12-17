@@ -20,6 +20,7 @@ import { LocationService } from './src/services/LocationService';
 import { AuthService } from './src/services/AuthService';
 import { StorageService } from './src/services/StorageService';
 import { DeviceService } from './src/services/DeviceService';
+import { HeartbeatService } from './src/services/HeartbeatService';
 
 const LOCATION_TASK_NAME = 'background-location-task';
 
@@ -188,8 +189,13 @@ export default function App() {
       await startBackgroundLocationTracking();
       console.log('✓ Background location updates started');
       
+      // Start heartbeat service to keep device status updated
+      console.log('Step 7: Starting heartbeat service...');
+      HeartbeatService.start();
+      console.log('✓ Heartbeat service started');
+      
       // Monitor battery level
-      console.log('Step 7: Starting battery monitoring...');
+      console.log('Step 8: Starting battery monitoring...');
       monitorBattery();
       console.log('✓ Battery monitoring started');
       
